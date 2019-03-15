@@ -3,27 +3,70 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 
+	"github.com/google/uuid"
 	"github.com/gorilla/mux"
+	"github.com/xeipuuv/gojsonschema"
 )
 
 var orders []Order
 
+/*
+ * Verify if the application is alive.
+ */
 func ping(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, "App is live.")
 }
 
+/*
+ * Add an order to the orders collection.
+ * For dev purposes instead of a DB is an inmemory array of orders that can be modified
+ */
 func addOrder(w http.ResponseWriter, r *http.Request) {
-	var order Order
-	_ = json.NewDecoder(r.Body).Decode(&order)
-	orders = append(orders, order)
-	json.NewEncoder(w).Encode(order)
-	fmt.Fprint(w, "Order added.")
+	//Verify there is a body
+	bodyBytes, err := ioutil.ReadAll(r.Body)
 
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	// Perform a schema validation,
+	// need to verify all properties are set and does not include extra information
+	schemaLoader := gojsonschema.NewStringLoader(Schema)
+	dataLoader := gojsonschema.NewBytesLoader(bodyBytes)
+	result, err := gojsonschema.Validate(schemaLoader, dataLoader)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprint(w, "There was an error loading the schema and validating. {}", err)
+		return
+	}
+	if result.Valid() {
+		var order Order
+		err = json.Unmarshal(bodyBytes, &order)
+		if err != nil {
+			fmt.Fprint(w, err)
+		}
+		if order.Items == nil {
+			fmt.Fprint(w, order.Items)
+		} else {
+			order.UUID = uuid.New().String()
+			orders = append(orders, order)
+			fmt.Fprint(w, "Order added. ID is: ", order.UUID)
+		}
+	} else {
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprint(w, "There is an error in the payload, verify the content has a valid structure.")
+		return
+	}
 }
 
+/*
+ * Retrieve all current orders.
+ */
 func getOrders(w http.ResponseWriter, r *http.Request) {
 	if len(orders) == 0 {
 		fmt.Fprint(w, "No orders at the moment.")
@@ -33,6 +76,9 @@ func getOrders(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+/*
+ * Get an specific order
+ */
 func getOrder(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	uuid := vars["uuid"]
@@ -46,6 +92,9 @@ func getOrder(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, "Requested order retrieved.")
 }
 
+/*
+* Cancel an order
+ */
 func deleteOrder(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	uuid := vars["uuid"]
@@ -60,6 +109,20 @@ func deleteOrder(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	router := mux.NewRouter()
+	var order Order
+	order.UUID = uuid.New().String()
+	order.Items = []Coffee{
+		Coffee{
+			CoffeType: "Americano",
+			Toppings:  "Crema Batida",
+			PersonalizedIngredients: Ingredients{
+				Milk:         "Light",
+				CoffeeStyle:  "Caliente",
+				CoffeeShoots: 4,
+			},
+		},
+	}
+	orders = append(orders, order)
 	router.HandleFunc("/ping", ping).Methods("GET")
 	router.HandleFunc("/orders", getOrders).Methods("GET")
 	router.HandleFunc("/order/{uuid}", getOrder).Methods("GET")

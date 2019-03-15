@@ -1,7 +1,7 @@
 package main
 
 type Order struct {
-	UUID  string   `json:"UUID"`
+	UUID  string   `json:"-"`
 	Items []Coffee `json:"Items"`
 }
 
