@@ -18,6 +18,7 @@ var orders []Order
  * Verify if the application is alive.
  */
 func ping(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
 	fmt.Fprint(w, "App is live.")
 }
 
@@ -41,26 +42,25 @@ func addOrder(w http.ResponseWriter, r *http.Request) {
 	result, err := gojsonschema.Validate(schemaLoader, dataLoader)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprint(w, "There was an error loading the schema and validating. {}", err)
+		fmt.Fprint(w, "There was an error loading the schema and validating.")
 		return
 	}
 	if result.Valid() {
 		var order Order
 		err = json.Unmarshal(bodyBytes, &order)
 		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
 			fmt.Fprint(w, err)
+			return
 		}
-		if order.Items == nil {
-			fmt.Fprint(w, order.Items)
-		} else {
-			order.UUID = uuid.New().String()
-			orders = append(orders, order)
-			fmt.Fprint(w, "Order added. ID is: ", order.UUID)
-		}
+		order.UUID = uuid.New().String()
+		orders = append(orders, order)
+		//Return the generated UUID
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprint(w, order.UUID)
 	} else {
 		w.WriteHeader(http.StatusBadRequest)
 		fmt.Fprint(w, "There is an error in the payload, verify the content has a valid structure.")
-		return
 	}
 }
 
@@ -70,9 +70,10 @@ func addOrder(w http.ResponseWriter, r *http.Request) {
 func getOrders(w http.ResponseWriter, r *http.Request) {
 	if len(orders) == 0 {
 		fmt.Fprint(w, "No orders at the moment.")
+		w.WriteHeader(http.StatusNoContent)
 	} else {
 		json.NewEncoder(w).Encode(orders)
-		fmt.Fprint(w, "All orders.")
+		w.WriteHeader(http.StatusOK)
 	}
 }
 
@@ -85,11 +86,12 @@ func getOrder(w http.ResponseWriter, r *http.Request) {
 	for _, n := range orders {
 		if n.UUID == uuid {
 			json.NewEncoder(w).Encode(n)
-			fmt.Fprint(w, "Requested order.")
-			break
+			w.WriteHeader(http.StatusOK)
+			return
 		}
 	}
-	fmt.Fprint(w, "Requested order retrieved.")
+	fmt.Fprint(w, "Requested order does not exists.")
+	w.WriteHeader(http.StatusNoContent)
 }
 
 /*
@@ -101,28 +103,16 @@ func deleteOrder(w http.ResponseWriter, r *http.Request) {
 	for i, n := range orders {
 		if n.UUID == uuid {
 			orders = append(orders[:i], orders[i+1:]...)
-			break
+			w.WriteHeader(http.StatusAccepted)
+			return
 		}
 	}
-	fmt.Fprint(w, "Requested order deleted.")
+	fmt.Fprint(w, "Requested order does not exists.")
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func main() {
 	router := mux.NewRouter()
-	var order Order
-	order.UUID = uuid.New().String()
-	order.Items = []Coffee{
-		Coffee{
-			CoffeType: "Americano",
-			Toppings:  "Crema Batida",
-			PersonalizedIngredients: Ingredients{
-				Milk:         "Light",
-				CoffeeStyle:  "Caliente",
-				CoffeeShoots: 4,
-			},
-		},
-	}
-	orders = append(orders, order)
 	router.HandleFunc("/ping", ping).Methods("GET")
 	router.HandleFunc("/orders", getOrders).Methods("GET")
 	router.HandleFunc("/order/{uuid}", getOrder).Methods("GET")

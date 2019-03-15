@@ -12,9 +12,6 @@ logs:
 down:
 	docker-compose down
 
-test:
-	go test -v -cover ./...
-
 clean: down
 	@echo "Cleaning up..."
 	rm -f api
