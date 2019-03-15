@@ -34,10 +34,9 @@ func deleteOrder(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 
-	pIngredients := PersonalizedIngredients{milk: "Light", coffeeStyle: "Caliente", coffeeShoots: 4}
-	cType := Coffee{coffeType: "Americano", toppings: "Crema batida", personalizedIngredients: pIngredients}
-	order := Order{ID: 1}
-	order.Items = append(order.Items, cType)
+	pIngredients := Ingredients{Milk: "Light", CoffeeStyle: "Caliente", CoffeeShoots: 4}
+	cType := Coffee{CoffeType: "Americano", Toppings: "Crema batida", PersonalizedIngredients: pIngredients}
+	order := Order{ID: 1, Items: []Coffee{cType}}
 	orders = append(orders, order)
 
 	router := mux.NewRouter()

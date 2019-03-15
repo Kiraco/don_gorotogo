@@ -6,13 +6,13 @@ type Order struct {
 }
 
 type Coffee struct {
-	coffeType               string
-	toppings                string
-	personalizedIngredients PersonalizedIngredients
+	CoffeType               string
+	Toppings                string
+	PersonalizedIngredients Ingredients
 }
 
-type PersonalizedIngredients struct {
-	milk         string
-	coffeeStyle  string
-	coffeeShoots int
+type Ingredients struct {
+	Milk         string
+	CoffeeStyle  string
+	CoffeeShoots int
 }
