@@ -16,34 +16,54 @@ func ping(w http.ResponseWriter, r *http.Request) {
 }
 
 func addOrder(w http.ResponseWriter, r *http.Request) {
+	var order Order
+	_ = json.NewDecoder(r.Body).Decode(&order)
+	orders = append(orders, order)
+	json.NewEncoder(w).Encode(order)
 	fmt.Fprint(w, "Order added.")
+
 }
 
 func getOrders(w http.ResponseWriter, r *http.Request) {
-	json.NewEncoder(w).Encode(orders)
-	fmt.Fprint(w, "All orders.")
+	if len(orders) == 0 {
+		fmt.Fprint(w, "No orders at the moment.")
+	} else {
+		json.NewEncoder(w).Encode(orders)
+		fmt.Fprint(w, "All orders.")
+	}
 }
 
 func getOrder(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	uuid := vars["uuid"]
+	for _, n := range orders {
+		if n.UUID == uuid {
+			json.NewEncoder(w).Encode(n)
+			fmt.Fprint(w, "Requested order.")
+			break
+		}
+	}
 	fmt.Fprint(w, "Requested order retrieved.")
 }
 
 func deleteOrder(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	uuid := vars["uuid"]
+	for i, n := range orders {
+		if n.UUID == uuid {
+			orders = append(orders[:i], orders[i+1:]...)
+			break
+		}
+	}
 	fmt.Fprint(w, "Requested order deleted.")
 }
 
 func main() {
-
-	pIngredients := Ingredients{Milk: "Light", CoffeeStyle: "Caliente", CoffeeShoots: 4}
-	cType := Coffee{CoffeType: "Americano", Toppings: "Crema batida", PersonalizedIngredients: pIngredients}
-	order := Order{ID: 1, Items: []Coffee{cType}}
-	orders = append(orders, order)
-
 	router := mux.NewRouter()
 	router.HandleFunc("/ping", ping).Methods("GET")
 	router.HandleFunc("/orders", getOrders).Methods("GET")
-	router.HandleFunc("/order/{id}", getOrder).Methods("GET")
-	router.HandleFunc("/order/{id}", deleteOrder).Methods("DELETE")
+	router.HandleFunc("/order/{uuid}", getOrder).Methods("GET")
+	router.HandleFunc("/order/{uuid}", deleteOrder).Methods("DELETE")
 	router.HandleFunc("/order", addOrder).Methods("POST")
 
 	log.Fatal(http.ListenAndServe(":5000", router))

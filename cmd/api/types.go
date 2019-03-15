@@ -1,18 +1,18 @@
 package main
 
 type Order struct {
-	ID    int
-	Items []Coffee
+	UUID  string   `json:"UUID"`
+	Items []Coffee `json:"Items"`
 }
 
 type Coffee struct {
-	CoffeType               string
-	Toppings                string
-	PersonalizedIngredients Ingredients
+	CoffeType               string      `json:"CoffeType"`
+	Toppings                string      `json:"Toppings"`
+	PersonalizedIngredients Ingredients `json:"PersonalizedIngredients"`
 }
 
 type Ingredients struct {
-	Milk         string
-	CoffeeStyle  string
-	CoffeeShoots int
+	Milk         string `json:"Milk"`
+	CoffeeStyle  string `json:"CoffeStyle"`
+	CoffeeShoots int    `json:"CoffeShoots"`
 }
