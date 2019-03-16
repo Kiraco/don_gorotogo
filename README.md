@@ -11,9 +11,7 @@ Dependencies used are:
 * github.com/xeipuuv/gojsonschema (schema validations)
 * github.com/google/uuid (uuid generation for orders id)
 
-In order to run the application run the followings commands
-
-First all the dependencies of the projects needs to be downloaded:
+In order to run the application run the followings commands. First all the dependencies of the projects needs to be downloaded:
 
 `make`
 
@@ -21,7 +19,9 @@ To run the application run the command
 
 `make up`
 
-docker-compose up
+If we want to have the live logs, the following command is needed:\
+
+`make logs`
 
 ## API documentation
 

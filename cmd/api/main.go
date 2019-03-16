@@ -90,7 +90,7 @@ func getOrder(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	fmt.Fprint(w, "Requested order does not exists.")
+	fmt.Fprint(w, "Requested order does not exist.")
 	w.WriteHeader(http.StatusNoContent)
 }
 
@@ -107,7 +107,7 @@ func deleteOrder(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	fmt.Fprint(w, "Requested order does not exists.")
+	fmt.Fprint(w, "Requested order does not exist.")
 	w.WriteHeader(http.StatusNoContent)
 }
 
